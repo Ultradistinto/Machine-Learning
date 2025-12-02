@@ -1,0 +1,71 @@
+# Configuration for Airbnb Price Predictor
+
+# Data paths
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+
+# Feature engineering flags
+features:
+  distance_to_center: true
+  bbaa_center: [-34.59977951146896, -58.38320368379193]
+
+  # Time-based features
+  last_review_date: true
+  days_since_last_review: true
+  weeks_since_last_review: true
+  months_since_last_review: true
+  quarters_since_last_review: true
+  years_since_last_review: true
+
+  # Categorical features
+  minimum_nights_category: true
+  host_multiple_listing: true
+  review_ratio: true
+
+# Data transformation
+transformation:
+  columns_to_transform:
+    - price
+    - minimum_nights
+    - number_of_reviews
+    - reviews_per_month
+    - calculated_host_listings_count
+    - last_review
+    - days_since_last_review
+    - weeks_since_last_review
+    - months_since_last_review
+    - quarters_since_last_review
+    - years_since_last_review
+
+# Outlier removal
+outliers:
+  remove_before_split: false
+  remove_after_split: false
+  lower_quantile: 0.25
+  upper_quantile: 0.75
+
+# Train/test split
+split:
+  test_size: 0.2
+  val_size: 0.2
+  random_state: 42
+
+# Model hyperparameters
+models:
+  linear_regression:
+    use_scaling: true
+
+  ridge:
+    alpha: 1.0
+    use_scaling: true
+
+  lasso:
+    alpha: 10.0
+    max_iter: 10000
+    use_scaling: true
+
+# Output
+output:
+  model_dir: "models/"
+  predictions_dir: "predictions/"
