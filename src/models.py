@@ -265,7 +265,7 @@ class ModelTrainer:
             'std': scores.std()
         }
 
-    def evaluate_model(self, model, X_sets, y_sets, set_names):
+    def evaluate_model(self, model, X_sets, y_sets, set_names, verbose=True):
         """
         Evaluate model on multiple datasets
 
@@ -274,6 +274,7 @@ class ModelTrainer:
             X_sets: List of feature sets [X_train, X_val, X_test]
             y_sets: List of target sets [y_train, y_val, y_test]
             set_names: List of names ['Train', 'Validation', 'Test']
+            verbose: Whether to print results
 
         Returns:
             Dictionary with metrics for each set
@@ -302,10 +303,11 @@ class ModelTrainer:
                 'R2': r2
             }
 
-            print(f"\n{name}:")
-            print(f"  MAE:  ${mae:,.2f}")
-            print(f"  RMSE: ${rmse:,.2f}")
-            print(f"  R²:   {r2:.6f}")
+            if verbose:
+                print(f"\n{name}:")
+                print(f"  MAE:  ${mae:,.2f}")
+                print(f"  RMSE: ${rmse:,.2f}")
+                print(f"  R²:   {r2:.6f}")
 
         return results
 

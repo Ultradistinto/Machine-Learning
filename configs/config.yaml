@@ -23,6 +23,71 @@ features:
   host_multiple_listing: true
   review_ratio: true
 
+# Feature groups for ablation study
+# Each group can be toggled on/off to test different feature combinations
+feature_groups:
+  # Location features
+  location:
+    enabled: true
+    columns:
+      - latitude
+      - longitude
+      - distance_to_center
+      - neighbourhood  # Will be one-hot encoded
+  
+  # Property features
+  property:
+    enabled: true
+    columns:
+      - room_type  # Will be one-hot encoded
+      - minimum_nights
+      - minimum_nights_num
+  
+  # Host features
+  host:
+    enabled: true
+    columns:
+      - calculated_host_listings_count
+      - host_has_multiple_listings
+  
+  # Review features
+  reviews:
+    enabled: true
+    columns:
+      - number_of_reviews
+      - reviews_per_month
+      - reviews_ratio
+  
+  # Time-based features
+  time:
+    enabled: true
+    columns:
+      - last_review
+      - days_since_last_review
+      - weeks_since_last_review
+      - months_since_last_review
+      - quarters_since_last_review
+      - years_since_last_review
+
+# Ablation study configuration
+ablation:
+  enabled: false
+  # Models to test with each feature combination
+  models:
+    - linear_regression
+    - random_forest
+    - gradient_boosting
+  # Feature group combinations to test (uses group names from feature_groups)
+  # "all" means use all enabled groups, individual groups test with/without that group
+  combinations:
+    - ["all"]                                    # All features
+    - ["location", "property", "host"]          # Without reviews and time
+    - ["location", "property", "reviews"]       # Without host and time
+    - ["property", "host", "reviews", "time"]  # Without location
+    - ["location"]                               # Only location
+    - ["property"]                               # Only property
+    - ["reviews"]                                # Only reviews
+
 # Data transformation
 transformation:
   columns_to_transform:

@@ -22,6 +22,7 @@ airbnb-price-predictor/
 ├── models/                  # Modelos guardados
 ├── predictions/             # Predicciones generadas
 ├── train.py                # Script principal de entrenamiento
+├── train_ablation.py       # Script para ablation study de features
 └── requirements.txt        # Dependencias del proyecto
 ```
 
@@ -37,9 +38,13 @@ airbnb-price-predictor/
 
 ### Modelos
 
-1. **Regresión Lineal**: Baseline con scaling
+1. **Regresión Lineal**: Baseline con y sin scaling
 2. **Ridge Regression**: Regularización L2 (alpha=1.0)
-3. **Lasso Regression**: Regularización L1 para selección de features (alpha=10.0)
+3. **Lasso Regression**: Regularización L1 para selección de features (alpha=1.0)
+4. **Decision Tree**: Árbol de decisión con GridSearchCV
+5. **Random Forest**: Ensemble de árboles con GridSearchCV
+6. **Gradient Boosting**: Boosting con GridSearchCV
+7. **Neural Network (MLP)**: Red neuronal con GridSearchCV
 
 ## Instalación
 
@@ -118,14 +123,98 @@ Los resultados incluyen las siguientes métricas:
 - **R²** (Coeficiente de determinación): Qué tan bien el modelo explica la variabilidad
 
 Las predicciones se guardan en:
-- `predictions/predictions_linear_regression.csv`
+- `predictions/predictions_linear_regression_unscaled.csv`
+- `predictions/predictions_linear_regression_scaled.csv`
 - `predictions/predictions_ridge.csv`
+- `predictions/predictions_lasso.csv`
+- `predictions/predictions_decision_tree.csv`
+- `predictions/predictions_random_forest.csv`
+- `predictions/predictions_gradient_boosting.csv`
+- `predictions/predictions_neural_network.csv`
+- `predictions/model_comparison.csv` - Tabla comparativa de todos los modelos
+
+## Feature Ablation Study
+
+El proyecto incluye un sistema para entrenar modelos con diferentes combinaciones de grupos de features, permitiendo analizar qué features contribuyen más a la predicción.
+
+### Grupos de Features
+
+| Grupo | Features |
+|-------|----------|
+| **location** | latitude, longitude, distance_to_center, neighbourhood (one-hot) |
+| **property** | room_type (one-hot), minimum_nights, minimum_nights_num |
+| **host** | calculated_host_listings_count, host_has_multiple_listings |
+| **reviews** | number_of_reviews, reviews_per_month, reviews_ratio |
+| **time** | last_review, days/weeks/months/quarters/years_since_last_review |
+
+### Uso del Ablation Study
+
+```bash
+# Ejecutar con combinaciones predefinidas en config
+python train_ablation.py
+
+# Probar todas las combinaciones posibles (2^5 - 1 = 31 combinaciones)
+python train_ablation.py --all-combinations
+
+# Probar grupos específicos
+python train_ablation.py --groups location property reviews
+
+# Especificar modelos a evaluar
+python train_ablation.py --models random_forest gradient_boosting neural_network
+
+# Usar grid search para optimización de hiperparámetros
+python train_ablation.py --grid-search
+
+# Combinar opciones
+python train_ablation.py --all-combinations --models random_forest --grid-search --output results/ablation.csv
+```
+
+### Salida
+
+El script genera:
+- `predictions/ablation_results.csv` - CSV con todos los resultados
+- Tablas resumen mostrando mejor R² por combinación y por modelo
+- Recomendación de la mejor configuración encontrada
+
+### Configuración en config.yaml
+
+```yaml
+# Grupos de features para ablation study
+feature_groups:
+  location:
+    enabled: true
+    columns:
+      - latitude
+      - longitude
+      - distance_to_center
+      - neighbourhood
+  property:
+    enabled: true
+    columns:
+      - room_type
+      - minimum_nights
+      - minimum_nights_num
+  # ... más grupos
+
+# Configuración del ablation study
+ablation:
+  enabled: false
+  models:
+    - linear_regression
+    - random_forest
+    - gradient_boosting
+  combinations:
+    - ["all"]
+    - ["location", "property", "host"]
+    - ["property", "host", "reviews", "time"]
+```
 
 ## Mejoras Futuras
 
-- [ ] Grid search para optimización de hiperparámetros
-- [ ] Validación cruzada
-- [ ] Modelos más complejos (Random Forest, XGBoost)
+- [x] Grid search para optimización de hiperparámetros
+- [x] Validación cruzada (K-Fold, Repeated K-Fold)
+- [x] Modelos más complejos (Random Forest, Gradient Boosting, Neural Networks)
+- [x] Feature ablation study
 - [ ] Feature selection automático
 - [ ] Análisis de features importantes
 - [ ] Dashboard de visualización

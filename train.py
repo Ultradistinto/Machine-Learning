@@ -301,7 +301,65 @@ def main():
     trainer.predict_test_set(model_nn, df_test_scaled, test_ids, 
                             f"{config['output']['predictions_dir']}/predictions_neural_network.csv")
 
+    # ==================== BEST MODEL SUMMARY ====================
+    
+    # Find best model based on Test R²
+    best_model_name = None
+    best_r2 = float('-inf')
+    best_metrics = None
+    
+    for model_name, results in all_results.items():
+        if results['Test']['R2'] > best_r2:
+            best_r2 = results['Test']['R2']
+            best_model_name = model_name
+            best_metrics = results
+    
     print("\n" + "="*70)
+    print("BEST MODEL FOUND")
+    print("="*70)
+    print(f"\n  Model: {best_model_name}")
+    print(f"\n  Performance Metrics:")
+    print(f"  {'-'*50}")
+    print(f"    Test R²:   {best_metrics['Test']['R2']:.6f}")
+    print(f"    Test MAE:  ${best_metrics['Test']['MAE']:,.2f}")
+    print(f"    Test RMSE: ${best_metrics['Test']['RMSE']:,.2f}")
+    print(f"    Val R²:    {best_metrics['Validation']['R2']:.6f}")
+    print(f"    Val MAE:   ${best_metrics['Validation']['MAE']:,.2f}")
+    
+    # Map model names to their config keys for hyperparameters
+    model_to_config_key = {
+        'Linear Regression (Unscaled)': None,
+        'Linear Regression (Scaled)': None,
+        'Ridge Regression': 'ridge',
+        'Lasso Regression': 'lasso',
+        'Decision Tree': 'decision_tree',
+        'Random Forest': 'random_forest',
+        'Gradient Boosting': 'gradient_boosting',
+        'Neural Network': 'neural_network',
+    }
+    
+    config_key = model_to_config_key.get(best_model_name)
+    
+    # Print hyperparameters
+    print(f"\n  Hyperparameters:")
+    print(f"  {'-'*50}")
+    
+    if config_key and config_key in trainer.best_params:
+        # Grid search was used and found best params
+        print(f"    (from GridSearchCV)")
+        for param, value in trainer.best_params[config_key].items():
+            print(f"    {param}: {value}")
+    elif config_key and config_key in config['models']:
+        # Print config defaults
+        model_config = config['models'][config_key]
+        print(f"    (from config defaults)")
+        for param, value in model_config.items():
+            if param != 'grid_search' and param != 'use_scaling':
+                print(f"    {param}: {value}")
+    else:
+        print(f"    No hyperparameters (linear regression)")
+    
+    print(f"\n{'='*70}")
     print("TRAINING COMPLETED")
     print("="*70)
 
