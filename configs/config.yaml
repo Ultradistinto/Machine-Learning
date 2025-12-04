@@ -61,9 +61,73 @@ models:
     use_scaling: true
 
   lasso:
-    alpha: 10.0
+    alpha: 1.0
     max_iter: 10000
     use_scaling: true
+
+  decision_tree:
+    # Default values (used if no grid search or after best params found)
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+    # Grid search parameter space
+    grid_search:
+      max_depth: [5, 10, 15, 20, null]
+      min_samples_split: [2, 5, 10]
+      min_samples_leaf: [1, 2, 4]
+
+  random_forest:
+    # Default values
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 2
+    min_samples_leaf: 1
+    n_jobs: -1
+    # Grid search parameter space
+    grid_search:
+      n_estimators: [50, 100, 200]
+      max_depth: [10, 20, null]
+      min_samples_split: [2, 5]
+      min_samples_leaf: [1, 2]
+
+  gradient_boosting:
+    # Default values
+    n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 5
+    min_samples_split: 2
+    min_samples_leaf: 1
+    # Grid search parameter space
+    grid_search:
+      n_estimators: [100, 200]
+      learning_rate: [0.01, 0.1, 0.2]
+      max_depth: [3, 5, 7]
+      min_samples_split: [2, 5]
+      min_samples_leaf: [1, 2]
+
+  neural_network:
+    # Default values
+    hidden_layers: [128, 64]
+    learning_rate: 0.001
+    epochs: 100
+    batch_size: 32
+    early_stopping: true
+    patience: 10
+    # Grid search parameter space
+    grid_search:
+      hidden_layers: [[64, 32], [128, 64], [128, 64, 32]]
+      learning_rate: [0.001, 0.01]
+
+# Cross-validation settings
+cross_validation:
+  enabled: true
+  method: "kfold"  # Options: "kfold", "repeated_holdout"
+  n_splits: 5
+  n_repeats: 3  # Only used for repeated_holdout
+  random_state: 42
+  # Whether to run grid search with CV
+  grid_search: true
+  scoring: "neg_root_mean_squared_error"  # Metric for model selection
 
 # Output
 output:
