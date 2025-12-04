@@ -2,8 +2,8 @@
 
 # Data paths
 data:
-  train_path: "data/train.csv"
-  test_path: "data/test.csv"
+  train_path: "sample_data/train.csv"
+  test_path: "sample_data/test.csv"
 
 # Feature engineering flags
 features:
