@@ -92,7 +92,19 @@ def main():
     print("TRAINING MODELS")
     print("="*70)
 
-    print("\n1. Linear Regression (Scaled)")
+    # 1. Linear Regression (No Scaling)
+    print("\n1. Linear Regression (No Scaling)")
+    print("-" * 50)
+    model_lr_unscaled = trainer.train_linear_regression(X_train, y_train, scaled=False)
+    results_lr_unscaled = trainer.evaluate_model(
+        model_lr_unscaled,
+        [X_train, X_val, X_test],
+        [y_train, y_val, y_test],
+        ['Train', 'Validation', 'Test']
+    )
+
+    # 2. Linear Regression (Scaled)
+    print("\n2. Linear Regression (Scaled)")
     print("-" * 50)
     X_train_scaled, X_val_scaled, X_test_scaled = trainer.scale_features(
         X_train, X_val, X_test
@@ -140,11 +152,21 @@ def main():
     print("GENERATING PREDICTIONS")
     print("="*70)
 
-    predictions_path = f"{config['output']['predictions_dir']}/predictions_linear_regression.csv"
-    trainer.predict_test_set(model_lr, df_test_scaled, test_ids, predictions_path)
+    # Linear Regression (Unscaled) - uses unscaled test data
+    predictions_path_lr_unscaled = f"{config['output']['predictions_dir']}/predictions_linear_regression_unscaled.csv"
+    trainer.predict_test_set(model_lr_unscaled, df_test, test_ids, predictions_path_lr_unscaled)
 
+    # Linear Regression (Scaled) - uses scaled test data
+    predictions_path_lr_scaled = f"{config['output']['predictions_dir']}/predictions_linear_regression_scaled.csv"
+    trainer.predict_test_set(model_lr, df_test_scaled, test_ids, predictions_path_lr_scaled)
+
+    # Ridge Regression - uses scaled test data
     predictions_path_ridge = f"{config['output']['predictions_dir']}/predictions_ridge.csv"
     trainer.predict_test_set(model_ridge, df_test_scaled, test_ids, predictions_path_ridge)
+
+    # Lasso Regression - uses scaled test data
+    predictions_path_lasso = f"{config['output']['predictions_dir']}/predictions_lasso.csv"
+    trainer.predict_test_set(model_lasso, df_test_scaled, test_ids, predictions_path_lasso)
 
     print("\n" + "="*70)
     print("TRAINING COMPLETED")
