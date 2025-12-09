@@ -55,3 +55,101 @@ class DataLoader:
             'missing_values': df.isnull().sum().sum()
         }
         return stats
+
+    def remove_outliers_iqr(self, df, columns=None, lower_factor=1.5, upper_factor=1.5):
+        """
+        Remove outliers using IQR method
+
+        Args:
+            df: DataFrame
+            columns: List of columns to check for outliers (default: all numeric)
+            lower_factor: Multiplier for lower bound (Q1 - factor*IQR)
+            upper_factor: Multiplier for upper bound (Q3 + factor*IQR)
+
+        Returns:
+            DataFrame without outliers
+        """
+        df_clean = df.copy()
+
+        if columns is None:
+            columns = df.select_dtypes(include=[np.number]).columns.tolist()
+
+        print(f"Original shape: {df_clean.shape}")
+
+        for col in columns:
+            Q1 = df_clean[col].quantile(0.25)
+            Q3 = df_clean[col].quantile(0.75)
+            IQR = Q3 - Q1
+
+            lower_bound = Q1 - lower_factor * IQR
+            upper_bound = Q3 + upper_factor * IQR
+
+            # Count outliers before removing
+            outliers = df_clean[(df_clean[col] < lower_bound) | (df_clean[col] > upper_bound)]
+
+            # Remove outliers
+            df_clean = df_clean[(df_clean[col] >= lower_bound) & (df_clean[col] <= upper_bound)]
+
+            print(f"  {col}: Removed {len(outliers)} outliers ({len(outliers)/len(df)*100:.2f}%)")
+
+        print(f"Final shape: {df_clean.shape}")
+        print(f"Total removed: {len(df) - len(df_clean)} rows ({(len(df) - len(df_clean))/len(df)*100:.2f}%)")
+
+        return df_clean
+
+
+    def remove_outliers_percentile(self, df, column, lower_percentile=0, upper_percentile=99):
+        """
+        Remove outliers based on percentiles
+
+        Args:
+            df: DataFrame
+            column: Column to filter
+            lower_percentile: Lower percentile threshold (0-100)
+            upper_percentile: Upper percentile threshold (0-100)
+
+        Returns:
+            DataFrame without outliers
+        """
+        df_clean = df.copy()
+
+        lower_bound = df_clean[column].quantile(lower_percentile / 100)
+        upper_bound = df_clean[column].quantile(upper_percentile / 100)
+
+        print(f"Original shape: {df_clean.shape}")
+        print(f"Removing {column} outside [{lower_bound:.2f}, {upper_bound:.2f}]")
+
+        df_clean = df_clean[(df_clean[column] >= lower_bound) & (df_clean[column] <= upper_bound)]
+
+        print(f"Final shape: {df_clean.shape}")
+        print(f"Total removed: {len(df) - len(df_clean)} rows ({(len(df) - len(df_clean))/len(df)*100:.2f}%)")
+
+        return df_clean
+
+
+    def remove_outliers_upper_only(self, df, column, upper_percentile=95):
+        """
+        Remove only upper outliers (common for price data)
+
+        Args:
+            df: DataFrame
+            column: Column to filter
+            upper_percentile: Upper percentile threshold (0-100)
+
+        Returns:
+            DataFrame without upper outliers
+        """
+        df_clean = df.copy()
+
+        upper_bound = df_clean[column].quantile(upper_percentile / 100)
+
+        print(f"Original shape: {df_clean.shape}")
+        print(f"Removing {column} > {upper_bound:.2f} (top {100-upper_percentile}%)")
+
+        outliers_removed = len(df_clean[df_clean[column] > upper_bound])
+        df_clean = df_clean[df_clean[column] <= upper_bound]
+
+        print(f"Final shape: {df_clean.shape}")
+        print(f"Total removed: {outliers_removed} rows ({outliers_removed/len(df)*100:.2f}%)")
+
+        return df_clean

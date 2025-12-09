@@ -56,6 +56,8 @@ def main():
     print(f"  Median: ${stats['median']:,.2f}")
     print(f"  Shape:  {stats['shape']}")
 
+    df = data_loader.remove_outliers_upper_only(df, column='price', upper_percentile=99)
+
     print("\nApplying feature engineering...")
     feature_engineer = FeatureEngineer(config['features'])
     df = feature_engineer.apply_all_features(df)
