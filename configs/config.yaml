@@ -21,6 +21,7 @@ features:
   # Categorical features
   minimum_nights_category: true
   host_multiple_listing: true
+  host_price_features: true
   review_ratio: true
 
 # Feature groups for ablation study
@@ -97,6 +98,10 @@ transformation:
     - reviews_per_month
     - calculated_host_listings_count
     - last_review
+    - host_mean_price
+    - host_price_range
+    - host_min_price
+    - host_max_price
     - days_since_last_review
     - weeks_since_last_review
     - months_since_last_review

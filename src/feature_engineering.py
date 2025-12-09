@@ -11,6 +11,7 @@ class FeatureEngineer:
     def __init__(self, config):
         self.config = config
         self.bbaa_center = config.get('bbaa_center', [-34.59977951146896, -58.38320368379193])
+        self.host_price_leaderboard = {}  # Stores host price statistics
 
     def add_distance_to_center(self, df):
         """Calculate distance from listing to Buenos Aires center"""
@@ -73,6 +74,62 @@ class FeatureEngineer:
         df['reviews_ratio'] = df['number_of_reviews'] / (df['days_since_last_review'] + 1)
         return df
 
+    def build_host_price_leaderboard(self, df):
+        """Build leaderboard with host price statistics (for training data with price column)"""
+        if 'price' not in df.columns:
+            return
+        
+        # Calculate statistics per host
+        host_stats = df.groupby('host_id')['price'].agg([
+            ('min_price', 'min'),
+            ('max_price', 'max'),
+            ('mean_price', 'mean'),
+            ('price_range', lambda x: x.max() - x.min())
+        ]).reset_index()
+        
+        # Sort by mean price in descending order (most expensive first) to create leaderboard
+        host_stats = host_stats.sort_values('mean_price')
+        host_stats['mean_price_rank'] = range(1, len(host_stats) + 1)
+        
+        # Store as dictionary for later use
+        self.host_price_leaderboard = host_stats.set_index('host_id').to_dict('index')
+        
+        return host_stats
+
+    def add_host_price_features(self, df):
+        """Add host price statistics features using the leaderboard"""
+        if not self.host_price_leaderboard:
+            # If leaderboard not built and price exists, build it
+            if 'price' in df.columns:
+                self.build_host_price_leaderboard(df)
+        
+        # Map host statistics to each listing
+        if self.host_price_leaderboard:
+            df['host_mean_price'] = df['host_id'].map(
+                lambda x: self.host_price_leaderboard.get(x, {}).get('mean_price', np.nan)
+            )
+            df['host_price_range'] = df['host_id'].map(
+                lambda x: self.host_price_leaderboard.get(x, {}).get('price_range', 0)
+            )
+            df['host_min_price'] = df['host_id'].map(
+                lambda x: self.host_price_leaderboard.get(x, {}).get('min_price', np.nan)
+            )
+            df['host_max_price'] = df['host_id'].map(
+                lambda x: self.host_price_leaderboard.get(x, {}).get('max_price', np.nan)
+            )
+            df['host_mean_price_rank'] = df['host_id'].map(
+                lambda x: self.host_price_leaderboard.get(x, {}).get('mean_price_rank', np.nan)
+            )
+            
+            # Fill NaN values for hosts not in leaderboard
+            df['host_mean_price'] = df['host_mean_price'].fillna(df['host_mean_price'].median())
+            df['host_price_range'] = df['host_price_range'].fillna(0)
+            df['host_min_price'] = df['host_min_price'].fillna(df['host_min_price'].median())
+            df['host_max_price'] = df['host_max_price'].fillna(df['host_max_price'].median())
+            df['host_mean_price_rank'] = df['host_mean_price_rank'].fillna(df['host_mean_price_rank'].median())
+        
+        return df
+
     def drop_unnecessary_columns(self, df):
         """Remove columns not needed for modeling"""
         columns_to_drop = ['name', 'id', 'host_id', 'host_name', 'availability_365']
@@ -119,6 +176,14 @@ class FeatureEngineer:
 
         if self.config.get('review_ratio', True):
             df = self.add_reviews_ratio(df)
+
+        # Add host price features (uses leaderboard if available)
+        if self.config.get('host_price_features', True):
+            if is_training and 'price' in df.columns:
+                # Build leaderboard from training data
+                self.build_host_price_leaderboard(df)
+            # Apply features using the leaderboard
+            df = self.add_host_price_features(df)
 
         df = self.fill_missing_values(df)
         df = self.drop_unnecessary_columns(df)
