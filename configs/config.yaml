@@ -21,7 +21,7 @@ features:
   # Categorical features
   minimum_nights_category: true
   host_multiple_listing: true
-  host_price_features: true
+  host_price_features: false
   review_ratio: true
 
 # Feature groups for ablation study
